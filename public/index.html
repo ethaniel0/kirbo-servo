@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kirbo</title>
+  
+  <style>
+    nav {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+    nav div {
+      margin-bottom: 1rem;
+    }
+  </style>
+  
+  <script src="https://cdn.socket.io/4.4.1/socket.io.min.js" integrity="sha384-fKnu0iswBIqkjxrhQCTZ7qlLHOFEgNkRmK2vaO/LbTZSXdJfAu6ewRBdwHPhBo/H" crossorigin="anonymous"></script>
+</head>
+<body>
+  <center>
+    <h1>Kirbo Servo</h1>
+    <br>
+    <br>
+    <nav id='nav' style='display: none'>
+      <div>
+        <span>A</span>
+        <input id='btA' type="text" maxlength=1 value='z'>
+      </div>
+      <div>
+        <span>B</span>
+        <input id='btB' type="text" maxlength=1 value='x'>
+      </div>
+      <div>
+        <span>1</span>
+        <input id='bt1' type="text" maxlength=1 value='c'>
+      </div>
+      <div>
+        <span>2</span>
+        <input id='bt2' type="text" maxlength=1 value='v'>
+      </div>
+      <div>
+        <span>Up</span>
+        <input id='btUp' type="text" maxlength=1 value='i'>
+      </div>
+      <div>
+        <span>Down</span>
+        <input id='btDown' type="text" maxlength=1 value='k'>
+      </div>
+      <div>
+        <span>Left</span>
+        <input id='btLeft' type="text" maxlength=1 value='j'>
+      </div>
+      <div>
+        <span>Right</span>
+        <input id='btRight' type="text" maxlength=1 value='l'>
+      </div>
+      <div>
+        <span>Shake</span>
+        <input id='btShake' type="text" maxlength=1 value=' '>
+      </div>
+    </nav>
+    <br>
+    <button onclick='setControls()'>Set Controls</button>
+
+    <br><br><br>
+    <div id='passwordBox'>
+      <input id='passwordInput' type="password" placeholder='password'>
+      <button onClick='sendPassword()'>Submit</button>
+    </div>
+    
+  </center>
+
+  <script>
+    var socket = io();
+
+    let controlToNumber = {
+        1: 0,
+        2: 1,
+        A: 2,
+        B: 3,
+        Up: 4,
+        Down: 5,
+        Left: 6,
+        Right: 7,
+        Plus: 8,
+        Minus: 9,
+        Home: 10,
+        Shake: 11,
+        TiltXBack: 12,
+        TiltXForward: 13,
+        TiltYBack: 14,
+        TiltYForward: 15
+    }
+
+    let controls = {};
+    let presses = {};
+
+    function setControls(){
+      let nav = document.getElementById('nav');
+      for (let d of nav.getElementsByTagName('div')){
+        let name = d.getElementsByTagName('span')[0].innerHTML;
+        let nameNum = controlToNumber[name];
+        let val = d.getElementsByTagName('input')[0].value.toUpperCase();
+        controls[val.charCodeAt(0)] = (1 << 4) + nameNum << 1;
+        presses[val.charCodeAt(0)] = false;
+      }
+      console.log(controls, presses);
+    }
+
+    function sendPassword(){
+      let pdbox = document.getElementById('passwordInput');
+      console.log(pdbox.value);
+      socket.emit('password', pdbox.value);
+    }
+
+    socket.on('accepted', () => {
+      document.getElementById('nav').style.display = 'grid';
+      document.getElementById('passwordBox').style.display = 'none';
+
+      document.addEventListener('keydown', (e) => {
+        if (e.keyCode in presses && !presses[e.keyCode]){
+          socket.emit('key', controls[e.keyCode] + 1);
+          presses[e.keyCode] = true;
+        }
+      })
+      document.addEventListener('keyup', (e) => {
+        if (e.keyCode in presses && controls[e.keyCode]){
+          socket.emit('key', controls[e.keyCode]);
+          presses[e.keyCode] = false;
+        }
+      })
+    })
+
+    
+   
+      
+    
+    
+  </script>
+  
+</body>
+</html>
